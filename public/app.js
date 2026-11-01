@@ -2,6 +2,8 @@ import {renderEvolution} from './chart.js';
 let state, digits='',blank=false,finished=false,busy=false;
 const $=id=>document.getElementById(id);
 const names={'11':'Ana Silva','22':'Bruno Costa','33':'Clara Lima',blank:'Brancos',null:'Nulos'};
+$('explain').onclick=()=>{$('explanation-dialog').showModal();$('explanation-title').focus();};
+$('explanation-close').onclick=()=>$('explanation-dialog').close();
 async function request(action,extra={}){
  if(busy)return;busy=true;$('message').textContent='';
  try{const response=await fetch(action?'/api/action':'/api/state',action?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...extra})}:{});const data=await response.json();if(!response.ok)throw Error(data.error);state=data;render();return true;}
@@ -56,7 +58,7 @@ function showBU(){
 function zero(){const report=$('report');report.hidden=false;report.innerHTML=`<h2>ZERÉSIMA · REPRESENTAÇÃO DIDÁTICA</h2><p>Seção 0001 · Cargo: representante fictício</p><p>Emissão: ${new Date(state.opened_at).toLocaleString('pt-BR')}</p><pre>Ana Silva (11)    0\nBruno Costa (22)  0\nClara Lima (33)   0\nBrancos          0\nNulos            0\nTOTAL            0</pre><p>Retrato da abertura, anterior ao primeiro voto.</p>`;}
 function card(title,rows,sim){const counts=Object.fromEntries(rows.map(r=>[r.choice,Number(r.total)]));const valid=['11','22','33'];const max=Math.max(...valid.map(k=>counts[k]||0));const winners=max?valid.filter(k=>counts[k]===max).map(k=>names[k]).join(' / '):'Sem votos válidos';return `<div class="result-card ${sim?'sim':''}"><h2>${title}</h2><p>${max?'Maior votação: ':''}${winners}</p><table><tbody>${Object.entries(names).map(([key,name])=>`<tr><td>${name}</td><td>${counts[key]||0}</td></tr>`).join('')}<tr><td>Total</td><td>${Object.values(counts).reduce((a,b)=>a+b,0)}</td></tr></tbody></table></div>`;}
 function showResults(){$('results').hidden=false;$('results').innerHTML=`<p class="eyebrow">BOLETIM DE URNA · REPRESENTAÇÃO EM TELA</p><h2>Uma eleição. Duas contagens para comparar.</h2><p>Encerramento: ${new Date(state.closed_at).toLocaleString('pt-BR')}. A contagem manipulada é fictícia e não substitui o registro original. Sem votos válidos, não há vencedor.</p><div class="comparison">${card('Resultado real',state.real,false)}${card('Resultado manipulado · SIMULAÇÃO',state.simulated,true)}</div>`;}
-document.addEventListener('keydown',event=>{if(['SELECT','INPUT','BUTTON'].includes(document.activeElement.tagName)||!state?.authorized||busy)return;if(/^\d$/.test(event.key))input(event.key);else if(event.key==='Backspace'){$('correct').click();event.preventDefault();}else if(event.key==='Enter')$('confirm').click();});
+document.addEventListener('keydown',event=>{if(document.querySelector('dialog[open]')||['SELECT','INPUT','BUTTON'].includes(document.activeElement.tagName)||!state?.authorized||busy)return;if(/^\d$/.test(event.key))input(event.key);else if(event.key==='Backspace'){$('correct').click();event.preventDefault();}else if(event.key==='Enter')$('confirm').click();});
 request();
 // Atualiza apenas a apuração para não interromper digitação, senha ou seleção do alvo.
 setInterval(async()=>{
